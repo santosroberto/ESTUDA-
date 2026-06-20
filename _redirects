@@ -1,0 +1,3 @@
+# Redirect all routes to root (hash-based routing — no SPA fallback needed)
+# Netlify: this file handles redirects for any upstream proxy
+# The app uses hash-based routing (#/route), so no catch-all is required.
