@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Estuda+ - Gerencie seus estudos de forma eficiente. Sessões, metas, pomodoro, materiais e estatísticas, tudo offline.">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="color-scheme" content="light dark">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Estuda+">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Estuda+">
+  <meta name="msapplication-TileColor" content="#4f46e5">
+  <meta name="msapplication-TileImage" content="/assets/icons/icon-144x144.png">
+
+  <title>Estuda+</title>
+
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- Ícones principais -->
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/icons/icon-512x512.png">
+
+  <!-- iOS -->
+  <link rel="apple-touch-icon" href="/assets/icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/icon-192x192.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="/assets/icons/icon-152x152.png">
+
+  <!-- iOS Splash Screens -->
+  <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" href="/assets/splash/apple-splash-1170x2532.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="/assets/splash/apple-splash-1179x2556.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="/assets/splash/apple-splash-1290x2796.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" href="/assets/splash/apple-splash-1125x2436.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" href="/assets/splash/apple-splash-828x1792.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" href="/assets/splash/apple-splash-1242x2688.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" href="/assets/splash/apple-splash-1668x2388.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" href="/assets/splash/apple-splash-2048x2732.png">
+
+  <!-- Estilos -->
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/src/styles/reset.css">
+  <link rel="stylesheet" href="/src/styles/variables.css">
+  <link rel="stylesheet" href="/src/styles/layout.css">
+  <link rel="stylesheet" href="/src/styles/components.css">
+  <link rel="stylesheet" href="/src/styles/pages.css">
+  <link rel="stylesheet" href="/src/styles/utilities.css">
+  <link rel="stylesheet" href="/src/styles/main.css">
+
+  <!-- CDN libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.3/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // ─── Service Worker ───
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((err) => {
+          console.warn('SW registration failed:', err)
+        })
+      })
+    }
+
+    // ─── App Install Prompt ───
+    let deferredPrompt = null
+    const INSTALL_EVENT = 'app:install-ready'
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault()
+      deferredPrompt = e
+      window.dispatchEvent(new CustomEvent(INSTALL_EVENT, { detail: { prompt: e } }))
+    })
+
+    window.installApp = function () {
+      if (!deferredPrompt) return Promise.resolve(false)
+      deferredPrompt.prompt()
+      return deferredPrompt.userChoice.then((choice) => {
+        deferredPrompt = null
+        return choice.outcome === 'accepted'
+      })
+    }
+
+    // ─── Offline Detection ───
+    window.addEventListener('online', () => {
+      document.documentElement.removeAttribute('data-offline')
+    })
+    window.addEventListener('offline', () => {
+      document.documentElement.setAttribute('data-offline', '')
+    })
+    if (!navigator.onLine) {
+      document.documentElement.setAttribute('data-offline', '')
+    }
+
+    // ─── Prevent pull-to-refresh on iOS standalone ───
+    if (window.navigator.standalone) {
+      document.addEventListener('touchmove', (e) => {
+        if (e.target.closest('.modal-overlay, .sidebar, .pomodoro__cycles-list, .session__history')) return
+        e.preventDefault()
+      }, { passive: false })
+    }
+  </script>
+
+  <script type="module" src="/src/app.js"></script>
+</body>
+</html>

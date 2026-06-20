@@ -1,0 +1,17 @@
+{
+  "name": "estuda-plus",
+  "version": "1.0.0",
+  "description": "PWA para gerenciamento de estudos pessoais — sessões, metas, pomodoro, materiais e estatísticas, tudo offline.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js --open",
+    "icons": "node scripts/generate-icons.js",
+    "splash": "node scripts/generate-splash.js",
+    "generate": "npm run icons && npm run splash"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
